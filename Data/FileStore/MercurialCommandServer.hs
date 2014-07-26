@@ -62,7 +62,8 @@ runMercurialCommand repo command args = do
 -- | Run a mercurial command directly without using the server.
 rawRunMercurialCommand :: FilePath -> String -> [String] -> IO (ExitCode, String, BL.ByteString)
 rawRunMercurialCommand repo command args = do
-   (status, err, out) <- runShellCommand repo Nothing "hg" (command : args)
+   let env = [("HGENCODING","utf8")]
+   (status, err, out) <- runShellCommand repo (Just env) "hg" (command : args)
    return (status, LUTF8.toString err, out)
 
 -- | Create a new command server for the given repository

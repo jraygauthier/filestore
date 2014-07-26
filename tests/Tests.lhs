@@ -12,7 +12,7 @@ This program runs tests for the filestore modules.
 > import Data.Time
 > import Data.Maybe (mapMaybe)
 > import System.FilePath
-> import Data.Algorithm.Diff (DI(..))
+> import Data.Algorithm.Diff (Diff(..))
 
 > main = do
 >   testFileStore (gitFileStore "tmp/gitfs") "Data.FileStore.Git"
@@ -306,6 +306,8 @@ This program runs tests for the filestore modules.
 *** Test history and revision
 
 > historyTest fs = TestCase $ do
+>   let testDescription = "history test message"
+>   save fs testTitle testAuthor testDescription testContents
 
     Get history for three files
 
@@ -316,7 +318,7 @@ This program runs tests for the filestore modules.
 >   assertBool "history contains latest revision" (rev `elem` hist)
 >   assertEqual "revAuthor" testAuthor (revAuthor rev)
 >   assertBool "revId non-null" (not (null (revId rev)))
->   assertBool "revDescription non-null" (not (null (revDescription rev)))
+>   assertEqual "revDescription" testDescription (revDescription rev)
 >   assertEqual "revChanges" [Modified testTitle] (revChanges rev)
 >   let revtime = revDateTime rev
 >   histNow <- history fs [testTitle] (TimeRange (Just $ addUTCTime (60 * 60 * 24) now) Nothing) Nothing
@@ -336,14 +338,14 @@ This program runs tests for the filestore modules.
 
 >   [secondrev, firstrev] <- history fs [diffTitle] (TimeRange Nothing Nothing) Nothing
 >   diff' <- diff fs diffTitle (Just $ revId firstrev) (Just $ revId secondrev)
->   let subtracted' = mapMaybe (\(d,s) -> if d == F then Just s else Nothing) diff'
+>   let subtracted' = [s | First s <- diff']
 >   assertEqual "subtracted lines" [[last (lines testContents)]] subtracted'
 
     Diff from Nothing should be diff from empty document.
 
 >   diff'' <- diff fs diffTitle Nothing (Just $ revId firstrev)
->   let added'' = mapMaybe (\(d,s) -> if d == S then Just s else Nothing) diff''
->   assertEqual "added lines from empty document to first revision" [lines testContents] added''
+>   let added'' = concat [x | Second x <- diff'']
+>   assertEqual "added lines from empty document to first revision" (lines testContents) added''
 
     Diff to Nothing should be diff to latest.
 
